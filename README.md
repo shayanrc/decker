@@ -1,65 +1,105 @@
-# DeepSeek Engineer 🐋
+# Decker 🐋
 
 ## Overview
 
-This repository contains a powerful coding assistant application that integrates with the DeepSeek API to process user conversations and generate structured JSON responses. Through an intuitive command-line interface, it can read local file contents, create new files, and apply diff edits to existing files in real time.
+Decker is a versatile command-line coding agent that integrates with various Large Language Models (LLMs) to assist with coding tasks. Through an intuitive command-line interface, it can read local file contents, create new files, and apply diff edits to existing files in real time.
 
 ## Key Features
 
-1. DeepSeek Client Configuration
-   - Automatically configures an API client to use the DeepSeek service with a valid DEEPSEEK_API_KEY. 
-   - Connects to the DeepSeek endpoint specified in the environment variable to stream GPT-like completions. 
+1. Multi-LLM Support
+   - Currently supports multiple LLM providers:
+     • DeepSeek Chat
+     • GPT-4o-Mini
+     • Gemini 2.0 Flash
+   - Easily configurable through command-line arguments
+   - Extensible architecture for adding new LLM providers
 
 2. Data Models
    - Leverages Pydantic for type-safe handling of file operations, including:
-     • FileToCreate – describes files to be created or updated.  
-     • FileToEdit – describes specific snippet replacements in an existing file.  
-     • AssistantResponse – structures chat responses and potential file operations.  
+     • FileToCreate – describes files to be created or updated
+     • FileToEdit – describes specific snippet replacements in an existing file
+     • AssistantResponse – structures chat responses and potential file operations
 
-3. System Prompt
-   - A comprehensive system prompt (system_PROMPT) guides conversation, ensuring all replies strictly adhere to JSON output with optional file creations or edits.  
+3. Interactive File Operations
+   - "/add" command to include file contents in the conversation
+   - Real-time file creation and modification
+   - Visual diff previews before applying changes
+   - Smart context management for referenced files
 
-4. Helper Functions
-   - read_local_file: Reads a target filesystem path and returns its content as a string.  
-   - create_file: Creates or overwrites a file with provided content.  
-   - show_diff_table: Presents proposed file changes in a rich, multi-line table.  
-   - apply_diff_edit: Applies snippet-level modifications to existing files.  
-
-5. "/add" Command
-   - Users can type "/add path/to/file" to quickly read a file's content and insert it into the conversation as a system message.  
-   - This allows the assistant to reference the file contents for further discussion, code generation, or diff proposals.  
-
-6. Conversation Flow
-   - Maintains a conversation_history list to track messages between user and assistant.  
-   - Streams the assistant's replies via the DeepSeek API, parsing them as JSON to preserve both the textual response and the instructions for file modifications.  
-
-7. Interactive Session
-   - Run the script (for example: "python3 main.py") to start an interactive loop at your terminal.  
-   - Enter your requests or code questions. Enter "/add path/to/file" to add file contents to the conversation.  
-   - When the assistant suggests new or edited files, you can confirm changes directly in your local environment.  
-   - Type "exit" or "quit" to end the session.  
+4. Rich Terminal Interface
+   - Streaming responses with syntax highlighting
+   - Interactive diff tables
+   - Clear success/error indicators
+   - Progress feedback for all operations
 
 ## Getting Started
 
-1. Prepare a .env file with your DeepSeek API key:
-   DEEPSEEK_API_KEY=your_api_key_here
+1. Set up your environment variables:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and add your API keys:
+     ```bash
+     # For DeepSeek
+     DEEPSEEK_API_KEY=your_deepseek_key_here
+     
+     # For GPT-4-Mini
+     OPENAI_API_KEY=your_openai_key_here
 
-2. Install dependencies and run (choose one method):
+     # For Gemini
+     GEMINI_API_KEY=your_gemini_key_here
+     ```
+   Note: You only need to set the API key for the model you plan to use.
+
+2. Install dependencies (choose one method):
 
    ### Using pip
    ```bash
    pip install -r requirements.txt
-   python3 main.py
    ```
 
    ### Using uv (faster alternative)
    ```bash
    uv venv
-
-   uv run main.py
    ```
 
-3. Enjoy multi-line streaming responses, file read-ins with "/add path/to/file", and precise file edits when approved.
+3. Run Decker with your preferred model:
 
-> **Note**: This is an experimental project developed by Skirano to test the new DeepSeek v3 API capabilities. It was developed as a rapid prototype and should be used accordingly.
+   ### Using DeepSeek
+   ```bash
+   python main.py --model deepseek-chat
+   ```
 
+   ### Using GPT-4-Mini
+   ```bash
+   python main.py --model gpt-4o-mini
+   ```
+
+   ### Using Gemini
+   ```bash
+   python main.py --model gemini-2.0-flash-exp
+   ```
+
+## Usage
+
+1. Start a conversation with your chosen model
+2. Use "/add path/to/file" to include files in the conversation
+3. Ask questions or request changes to your code
+4. Review and approve any suggested file modifications
+5. Type "exit" or "quit" to end the session
+
+## Commands
+
+- `/add path/to/file` - Add a file's contents to the conversation
+- `exit` or `quit` - End the session
+
+## Example Session
+```
+$ python main.py --model deepseek-chat
+Welcome to Decker! 🐋
+You> /add main.py
+✓ Added file 'main.py' to conversation.
+You> Help me optimize this file
+Assistant> [Assistant analyzes and suggests optimizations...]
+```

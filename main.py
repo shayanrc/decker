@@ -24,31 +24,71 @@ console = Console()
 # --------------------------------------------------------------------------------
 load_dotenv()  # Load environment variables from .env file
 
+SUPPORTED_MODELS = {
+    "deepseek-chat": {
+        "name": "DeepSeek Chat",
+        "env_key": "DEEPSEEK_API_KEY",
+        "api_url": "https://api.deepseek.com"
+    },
+    "gpt-4o-mini": {
+        "name": "GPT-4o-Mini",
+        "env_key": "OPENAI_API_KEY",
+        "api_url": "https://api.openai.com/v1"
+    },
+    "gemini-2.0-flash-exp": {
+        "name": "Gemini 2.0 Flash",
+        "env_key": "GEMINI_API_KEY",
+        "api_url": "https://generativelanguage.googleapis.com/v1beta/openai"
+    }
+}
+
+class ModelChoiceError(Exception):
+    pass
+
+def validate_model_choice(model_name: str) -> str:
+    if model_name not in SUPPORTED_MODELS:
+        available_models = "\n  • ".join([""] + [f"{k} ({v['name']})" for k, v in SUPPORTED_MODELS.items()])
+        raise ModelChoiceError(
+            f"Invalid model '{model_name}'. Available models:{available_models}"
+        )
+    return model_name
+
 # NEW: Argument parser for command line options
 parser = argparse.ArgumentParser(description="Select the model to use.")
 parser.add_argument(
     "--model",
-    choices=["deepseek-chat", "gpt-4o-mini"],
+    type=validate_model_choice,
+    choices=SUPPORTED_MODELS.keys(),
     default="gpt-4o-mini",
-    help="Choose the model to use: 'deepseek-chat' or 'gpt-4o-mini'. Default is 'gpt-4o-mini'."
+    help=f"Choose the model to use. Default is 'gpt-4o-mini'."
 )
-args = parser.parse_args()
 
-# NEW: Set API key and model based on the selected option
-if args.model == "deepseek-chat":
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    model_name = "deepseek-chat"
-    api_url="https://api.deepseek.com"
-else:
-    api_key = os.getenv("OPENAI_API_KEY")
-    model_name = "gpt-4o-mini"
-    api_url="https://api.openai.com/v1"
-# NEW: Check if the API key is available
-if not api_key:
-    console.print(f"[red]✗[/red] API key for '{model_name}' not found. Please add it to your .env file.", style="red")
+try:
+    args = parser.parse_args()
+    model_config = SUPPORTED_MODELS[args.model]
+    
+    # Get API key and configuration
+    api_key = os.getenv(model_config["env_key"])
+    model_name = args.model
+    api_url = model_config["api_url"]
+
+    # Check if the API key is available
+    if not api_key:
+        console.print(
+            f"[red]✗[/red] API key for {model_config['name']} not found.\n"
+            f"Please add {model_config['env_key']} to your .env file.", 
+            style="red"
+        )
+        sys.exit(1)
+
+    client = OpenAI(api_key=api_key, base_url=api_url)  # Configure for the selected API
+
+except ModelChoiceError as e:
+    console.print(f"[red]✗[/red] {str(e)}", style="red")
     sys.exit(1)
-
-client = OpenAI(api_key=api_key, base_url=api_url)  # Configure for the selected API
+except Exception as e:
+    console.print(f"[red]✗[/red] Error initializing model: {str(e)}", style="red")
+    sys.exit(1)
 
 # --------------------------------------------------------------------------------
 # 2. Define our schema using Pydantic for type safety
