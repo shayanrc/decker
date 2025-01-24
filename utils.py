@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich.markdown import Markdown
 
 # Initialize Rich console
 console = Console()
@@ -17,10 +18,44 @@ def read_local_file(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
-def create_file(path: str, content: str, conversation_history: List[Dict[str, Any]]) -> None:
-    """Create (or overwrite) a file at 'path' with the given 'content'."""
+def show_file_preview(path: str, content: str) -> None:
+    """Show a preview of the file to be created."""
+    console.print(f"\n[bold]Preview of file to create:[/bold] [cyan]{path}[/cyan]")
+    
+    # If the content looks like markdown, render it as markdown
+    if path.endswith(('.md', '.markdown')):
+        console.print(Panel(Markdown(content), title="Content Preview", border_style="green"))
+    else:
+        console.print(Panel(content, title="Content Preview", border_style="green"))
+
+def confirm_action(prompt: str) -> bool:
+    """Ask for user confirmation with a yes/no prompt."""
+    response = console.input(f"\n{prompt} ([green]y[/green]/[red]n[/red]): ").strip().lower()
+    return response == 'y'
+
+def create_file(path: str, content: str, conversation_history: List[Dict[str, Any]], require_confirmation: bool = True) -> bool:
+    """
+    Create (or overwrite) a file at 'path' with the given 'content'.
+    Returns True if the file was created, False if creation was cancelled.
+    """
     file_path = Path(path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)  # ensures any dirs exist
+    
+    if require_confirmation:
+        # Show preview and get confirmation
+        show_file_preview(str(file_path), content)
+        if file_path.exists():
+            if not confirm_action(f"File '[cyan]{file_path}[/cyan]' already exists. Do you want to overwrite it?"):
+                console.print("[yellow]ℹ[/yellow] File creation cancelled.", style="yellow")
+                return False
+        else:
+            if not confirm_action(f"Do you want to create '[cyan]{file_path}[/cyan]'?"):
+                console.print("[yellow]ℹ[/yellow] File creation cancelled.", style="yellow")
+                return False
+
+    # Create parent directories if they don't exist
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Write the file
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
     console.print(f"[green]✓[/green] Created/updated file at '[cyan]{file_path}[/cyan]'")
@@ -37,6 +72,8 @@ def create_file(path: str, content: str, conversation_history: List[Dict[str, An
         "role": "system",
         "content": f"Content of file '{normalized_path}':\n\n{content}"
     })
+    
+    return True
 
 def show_diff_table(files_to_edit: List[Any]) -> None:
     """Show a table of proposed file edits."""

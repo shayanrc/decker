@@ -24,6 +24,7 @@ from utils import (
     try_handle_add_command,
     ensure_file_in_context,
     guess_files_in_message,
+    confirm_action,
 )
 
 # --------------------------------------------------------------------------------
@@ -267,15 +268,14 @@ def main():
         # Create any files if requested
         if response_data.files_to_create:
             for file_info in response_data.files_to_create:
-                create_file(file_info.path, file_info.content, conversation_history)
+                if not create_file(file_info.path, file_info.content, conversation_history):
+                    console.print("[yellow]ℹ[/yellow] Skipping remaining file operations.", style="yellow")
+                    break
 
         # Show and confirm diff edits if requested
         if response_data.files_to_edit:
             show_diff_table(response_data.files_to_edit)
-            confirm = console.input(
-                "\nDo you want to apply these changes? ([green]y[/green]/[red]n[/red]): "
-            ).strip().lower()
-            if confirm == 'y':
+            if confirm_action("Do you want to apply these changes?"):
                 for edit_info in response_data.files_to_edit:
                     apply_diff_edit(edit_info.path, edit_info.original_snippet, edit_info.new_snippet, conversation_history)
             else:
