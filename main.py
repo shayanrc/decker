@@ -5,15 +5,11 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from textwrap import dedent
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich.style import Style
 
 from utils import (
     console,
